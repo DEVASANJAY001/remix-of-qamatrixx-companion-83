@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
+import { Upload, ExternalLink } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface FileUploadDialogProps {
@@ -320,12 +320,32 @@ const FileUploadDialog = ({ nextSNo, onImport }: FileUploadDialogProps) => {
               )}
             </div>
           )}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleImport} disabled={preview.length === 0}>
-              Import {preview.length} Rows
-            </Button>
-          </div>
+          <div className="flex justify-between items-center pt-2">
+
+  {/* LEFT → FILE CONVERTER BUTTON */}
+  <Button
+    type="button"
+    variant="secondary"
+    className="gap-2"
+    onClick={() => window.open("https://matrixconverter.streamlit.app/", "_blank")}
+  >
+    <ExternalLink className="w-4 h-4" />
+    File Converter
+  </Button>
+
+  {/* RIGHT SIDE BUTTONS */}
+  <div className="flex gap-2">
+    <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+      Cancel
+    </Button>
+
+    <Button onClick={handleImport} disabled={preview.length === 0}>
+      Import {preview.length} Rows
+    </Button>
+  </div>
+
+</div>
+
         </div>
       </DialogContent>
     </Dialog>
