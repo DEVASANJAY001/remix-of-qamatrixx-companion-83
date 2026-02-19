@@ -30,7 +30,6 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
   const rawHeaders = (rows[0] || []).map((h: any) => String(h || "").trim());
   const headers = rawHeaders.map(normalizeHeader);
 
-  // Build a map of header -> column index
   const colMap: Record<string, number> = {};
   headers.forEach((h, i) => { colMap[h] = i; });
 
@@ -38,10 +37,8 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
     for (const name of names) {
       const nm = normalizeHeader(name);
       if (colMap[nm] !== undefined) return colMap[nm];
-      // Try exact original header match
       const idx = rawHeaders.findIndex(r => r === name);
       if (idx !== -1) return idx;
-      // Partial match
       const idx2 = headers.findIndex(h => h.includes(nm));
       if (idx2 !== -1) return idx2;
     }
@@ -61,7 +58,6 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
     return isNaN(num) ? null : num;
   };
 
-  // Basic columns
   const sNoCol = find("S.No", "sno", "s.no");
   const sourceCol = find("Source", "src");
   const stationCol = find("Station", "stn", "operation station");
@@ -72,7 +68,6 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
   const actionCol = find("MFG Action", "action");
   const targetCol = find("Target");
 
-  // Weekly recurrence columns
   const w6Col = find("W-6");
   const w5Col = find("W-5");
   const w4Col = find("W-4");
@@ -81,14 +76,12 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
   const w1Col = find("W-1");
   const rcdrCol = find("RC+DR");
 
-  // Trim columns
   const tCols = {
     T10: find("T10"), T20: find("T20"), T30: find("T30"), T40: find("T40"),
     T50: find("T50"), T60: find("T60"), T70: find("T70"), T80: find("T80"),
     T90: find("T90"), T100: find("T100"), TPQG: find("TPQG"),
   };
 
-  // Chassis columns
   const cCols = {
     C10: find("C10"), C20: find("C20"), C30: find("C30"), C40: find("C40"),
     C45: find("C45"), P10: find("P10"), P20: find("P20"), P30: find("P30"),
@@ -96,7 +89,6 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
     TS: find("TS"), C80: find("C80"), CPQG: find("CPQG"),
   };
 
-  // Final columns
   const fCols = {
     F10: find("F10"), F20: find("F20"), F30: find("F30"), F40: find("F40"),
     F50: find("F50"), F60: find("F60"), F70: find("F70"), F80: find("F80"),
@@ -104,7 +96,6 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
   };
   const residualTorqueCol = find("Residual Torque");
 
-  // QControl columns (1.1, 1.2, etc.)
   const qcCols = {
     freqControl_1_1: find("1.1"),
     visualControl_1_2: find("1.2"),
@@ -119,18 +110,15 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
     saeProhibition_5_3: find("5.3"),
   };
 
-  // QControl Detail
   const cvtCol = find("CVT");
   const showerCol = find("SHOWER");
   const dynamicUBCol = find("Dynamic/UB", "Dynamic/ UB", "DynamicUB");
   const cc4Col = find("CC4");
 
-  // Control Rating
   const ctrlMfgCol = find("CTRL MFG");
   const ctrlQtyCol = find("CTRL Qty");
   const ctrlPlantCol = find("CTRL Plant");
 
-  // Status columns
   const wsStatusCol = find("WS Status");
   const mfgStatusCol = find("MFG Status");
   const plantStatusCol = find("Plant Status");
@@ -153,50 +141,6 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
     ];
     const recurrence = weeklyRecurrence.reduce((a, b) => a + b, 0);
 
-    const trim = {
-      T10: getNum(row, tCols.T10), T20: getNum(row, tCols.T20), T30: getNum(row, tCols.T30),
-      T40: getNum(row, tCols.T40), T50: getNum(row, tCols.T50), T60: getNum(row, tCols.T60),
-      T70: getNum(row, tCols.T70), T80: getNum(row, tCols.T80), T90: getNum(row, tCols.T90),
-      T100: getNum(row, tCols.T100), TPQG: getNum(row, tCols.TPQG),
-    };
-
-    const chassis = {
-      C10: getNum(row, cCols.C10), C20: getNum(row, cCols.C20), C30: getNum(row, cCols.C30),
-      C40: getNum(row, cCols.C40), C45: getNum(row, cCols.C45), P10: getNum(row, cCols.P10),
-      P20: getNum(row, cCols.P20), P30: getNum(row, cCols.P30), C50: getNum(row, cCols.C50),
-      C60: getNum(row, cCols.C60), C70: getNum(row, cCols.C70), RSub: getNum(row, cCols.RSub),
-      TS: getNum(row, cCols.TS), C80: getNum(row, cCols.C80), CPQG: getNum(row, cCols.CPQG),
-    };
-
-    const final = {
-      F10: getNum(row, fCols.F10), F20: getNum(row, fCols.F20), F30: getNum(row, fCols.F30),
-      F40: getNum(row, fCols.F40), F50: getNum(row, fCols.F50), F60: getNum(row, fCols.F60),
-      F70: getNum(row, fCols.F70), F80: getNum(row, fCols.F80), F90: getNum(row, fCols.F90),
-      F100: getNum(row, fCols.F100), FPQG: getNum(row, fCols.FPQG),
-      ResidualTorque: getNum(row, residualTorqueCol),
-    };
-
-    const qControl = {
-      freqControl_1_1: getNum(row, qcCols.freqControl_1_1),
-      visualControl_1_2: getNum(row, qcCols.visualControl_1_2),
-      periodicAudit_1_3: getNum(row, qcCols.periodicAudit_1_3),
-      humanControl_1_4: getNum(row, qcCols.humanControl_1_4),
-      saeAlert_3_1: getNum(row, qcCols.saeAlert_3_1),
-      freqMeasure_3_2: getNum(row, qcCols.freqMeasure_3_2),
-      manualTool_3_3: getNum(row, qcCols.manualTool_3_3),
-      humanTracking_3_4: getNum(row, qcCols.humanTracking_3_4),
-      autoControl_5_1: getNum(row, qcCols.autoControl_5_1),
-      impossibility_5_2: getNum(row, qcCols.impossibility_5_2),
-      saeProhibition_5_3: getNum(row, qcCols.saeProhibition_5_3),
-    };
-
-    const qControlDetail = {
-      CVT: getNum(row, cvtCol),
-      SHOWER: getNum(row, showerCol),
-      DynamicUB: getNum(row, dynamicUBCol),
-      CC4: getNum(row, cc4Col),
-    };
-
     const wsRaw = getVal(row, wsStatusCol).toUpperCase();
     const mfgRaw = getVal(row, mfgStatusCol).toUpperCase();
     const plantRaw = getVal(row, plantStatusCol).toUpperCase();
@@ -211,7 +155,11 @@ function parseSheet(sheet: XLSX.WorkSheet, startSNo: number): QAMatrixEntry[] {
       recurrence,
       weeklyRecurrence,
       recurrenceCountPlusDefect: getNum(row, rcdrCol) ?? (defectRating + recurrence),
-      trim, chassis, final, qControl, qControlDetail,
+      trim: {},
+      chassis: {},
+      final: {},
+      qControl: {},
+      qControlDetail: {},
       controlRating: {
         MFG: getNum(row, ctrlMfgCol) ?? 0,
         Quality: getNum(row, ctrlQtyCol) ?? 0,
@@ -271,14 +219,17 @@ const FileUploadDialog = ({ nextSNo, onImport }: FileUploadDialogProps) => {
           Upload File
         </Button>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>Import QA Matrix Data</DialogTitle>
         </DialogHeader>
+
         <div className="space-y-4 mt-2">
           <p className="text-sm text-muted-foreground">
             Upload a CSV or Excel file (.xlsx, .xls) with QA Matrix data.
           </p>
+
           <input
             ref={fileRef}
             type="file"
@@ -286,66 +237,39 @@ const FileUploadDialog = ({ nextSNo, onImport }: FileUploadDialogProps) => {
             onChange={handleFile}
             className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
           />
+
           {fileName && (
             <p className="text-sm">
               File: <span className="font-semibold">{fileName}</span> — {preview.length} rows detected
             </p>
           )}
-          {preview.length > 0 && (
-            <div className="max-h-[200px] overflow-auto border border-border rounded-md">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/50 sticky top-0">
-                  <tr>
-                    <th className="px-2 py-1 text-left">#</th>
-                    <th className="px-2 py-1 text-left">Source</th>
-                    <th className="px-2 py-1 text-left">Station</th>
-                    <th className="px-2 py-1 text-left">Concern</th>
-                    <th className="px-2 py-1 text-center">DR</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.slice(0, 20).map((entry) => (
-                    <tr key={entry.sNo} className="border-t border-border/30">
-                      <td className="px-2 py-1">{entry.sNo}</td>
-                      <td className="px-2 py-1">{entry.source}</td>
-                      <td className="px-2 py-1">{entry.operationStation}</td>
-                      <td className="px-2 py-1 max-w-[200px] truncate">{entry.concern}</td>
-                      <td className="px-2 py-1 text-center">{entry.defectRating}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {preview.length > 20 && (
-                <p className="text-xs text-muted-foreground p-2">...and {preview.length - 20} more rows</p>
-              )}
+
+          {/* BUTTON ROW */}
+          <div className="flex justify-between pt-2">
+
+            {/* LEFT → FILE CONVERTER */}
+            <Button
+              type="button"
+              variant="secondary"
+              className="gap-2"
+              onClick={() => window.open("https://matrixconverter.streamlit.app/", "_blank")}
+            >
+              <ExternalLink className="w-4 h-4" />
+              File Converter
+            </Button>
+
+            {/* RIGHT BUTTONS */}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+
+              <Button onClick={handleImport} disabled={preview.length === 0}>
+                Import {preview.length} Rows
+              </Button>
             </div>
-          )}
-          <div className="flex justify-between items-center pt-2">
 
-  {/* LEFT → FILE CONVERTER BUTTON */}
-  <Button
-    type="button"
-    variant="secondary"
-    className="gap-2"
-    onClick={() => window.open("https://matrixconverter.streamlit.app/", "_blank")}
-  >
-    <ExternalLink className="w-4 h-4" />
-    File Converter
-  </Button>
-
-  {/* RIGHT SIDE BUTTONS */}
-  <div className="flex gap-2">
-    <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-      Cancel
-    </Button>
-
-    <Button onClick={handleImport} disabled={preview.length === 0}>
-      Import {preview.length} Rows
-    </Button>
-  </div>
-
-</div>
-
+          </div>
         </div>
       </DialogContent>
     </Dialog>
